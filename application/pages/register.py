@@ -8,22 +8,59 @@ hide_icons()
 hide_sidebar()
 remove_whitespaces()
 
-form = st.form("login")
-email = form.text_input("Enter your email")
-password = form.text_input("Enter your password", type="password")
-clicked_login = st.button("Already registered? Click here to login!")
+# Main title
+st.title("Create New Account")
+st.markdown("### Join our blockchain certificate verification system")
+
+# Add some spacing
+st.write("")
+st.write("")
+
+# Registration form
+st.markdown("### 📝 Registration")
+
+# Create form with custom styling
+form = st.form("register")
+
+# Add form fields
+email = form.text_input("Email Address", placeholder="Enter your email address", key="reg_email_input")
+password = form.text_input("Password", type="password", placeholder="Create a strong password", key="reg_password_input")
+
+# Add some spacing
+st.write("")
+st.write("")
+
+# Submit button
+submit = form.form_submit_button("🚀 Create Account", use_container_width=True)
+
+# Login link
+st.write("")
+st.markdown("Already have an account?")
+
+clicked_login = st.button("🔐 Sign In Instead", key="login_btn", use_container_width=True)
 
 if clicked_login:
     switch_page("login")
     
-submit = form.form_submit_button("Register")
+# Handle form submission
 if submit:
-    result = register(email, password)
-    if result == "success":
-        st.success("Registration successful!")
-        if st.session_state.profile == "Institute":
-            switch_page("institute")
+    if email and password:
+        result = register(email, password)
+        if result == "success":
+            st.success("✅ Registration successful! Welcome to the system.")
+            if st.session_state.profile == "Institute":
+                switch_page("institute")
+            else:
+                switch_page("verifier")
         else:
-            switch_page("verifier")
+            st.error("❌ Registration failed! Please try again with different credentials.")
     else:
-        st.error("Registration unsuccessful!")
+        st.error("❌ Please fill in all fields!")
+
+# Add back button
+st.write("")
+st.write("")
+st.markdown("Changed your mind?")
+
+if st.button("⬅️ Back to Home", key="back_btn", use_container_width=True):
+    switch_page("app")

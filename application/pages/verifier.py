@@ -5,6 +5,7 @@ from utils.cert_utils import extract_certificate
 from utils.streamlit_utils import view_certificate
 from connection import contract
 from utils.streamlit_utils import displayPDF, hide_icons, hide_sidebar, remove_whitespaces
+from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 hide_icons()
@@ -12,10 +13,12 @@ hide_sidebar()
 remove_whitespaces()
 
 
+st.markdown("## Verifier Dashboard")
 options = ("Verify Certificate using PDF", "View/Verify Certificate using Certificate ID")
-selected = st.selectbox("", options, label_visibility="hidden")
+selected = st.selectbox("Select an option", options)
 
 if selected == options[0]:
+    st.markdown("### Verify Certificate using PDF")
     uploaded_file = st.file_uploader("Upload the PDF version of the certificate")
     if uploaded_file is not None:
         bytes_data = uploaded_file.getvalue()
@@ -40,6 +43,7 @@ if selected == options[0]:
             st.error("Invalid Certificate! Certificate might be tampered")
 
 elif selected == options[1]:
+    st.markdown("### View/Verify Certificate using Certificate ID")
     form = st.form("Validate-Certificate")
     certificate_id = form.text_input("Enter the Certificate ID")
     submit = form.form_submit_button("Validate")
@@ -54,3 +58,9 @@ elif selected == options[1]:
                 st.error("Invalid Certificate ID!")
         except Exception as e:
             st.error("Invalid Certificate ID!")
+
+# Add navigation
+st.write("")
+st.write("")
+if st.button("⬅️ Back to Home", key="back_btn", use_container_width=True):
+    switch_page("app")

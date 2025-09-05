@@ -12,30 +12,65 @@ remove_whitespaces()
 
 load_dotenv()
 
-form = st.form("login")
-email = form.text_input("Enter your email")
-password = form.text_input("Enter your password", type="password")
+# Main title
+profile_type = "Institute" if st.session_state.profile == "Institute" else "Verifier"
+st.title(f"Login as {profile_type}")
+st.markdown("### Enter your credentials to access the system")
 
+# Add some spacing
+st.write("")
+st.write("")
+
+# Login form
+st.markdown("### 🔐 Authentication")
+
+# Create form with custom styling
+form = st.form("login")
+
+# Add form fields
+email = form.text_input("Email Address", key="email_input")
+password = form.text_input("Password", type="password", key="password_input")
+
+# Add some spacing
+st.write("")
+st.write("")
+
+# Submit button
+submit = form.form_submit_button("🚀 Login", use_container_width=True)
+
+# Registration link for verifiers
 if st.session_state.profile != "Institute":
-    clicked_register = st.button("New user? Click here to register!")
+    st.write("")
+    st.markdown("Don't have an account?")
+    
+    clicked_register = st.button("📝 Create New Account", key="register_btn", use_container_width=True)
 
     if clicked_register:
         switch_page("register")
 
-submit = form.form_submit_button("Login")
+# Handle form submission
 if submit:
     if st.session_state.profile == "Institute":
         valid_email = os.getenv("institute_email")
         valid_pass = os.getenv("institute_password")
         if email == valid_email and password == valid_pass:
+            st.success("✅ Login successful! Redirecting...")
             switch_page("institute")
         else:
-            st.error("Invalid credentials!")
+            st.error("❌ Invalid credentials! Please check your email and password.")
     else:
         result = login(email, password)
         if result == "success":
-            st.success("Login successful!")
+            st.success("✅ Login successful! Redirecting...")
             switch_page("verifier")
         else:
-            st.error("Invalid credentials!")
+            st.error("❌ Invalid credentials! Please check your email and password.")
+
+# Add back button
+st.write("")
+st.write("")
+st.markdown("Need to change your role?")
+
+if st.button("⬅️ Back to Home", key="back_btn", use_container_width=True):
+    switch_page("app")
         
