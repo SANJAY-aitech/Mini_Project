@@ -7,6 +7,21 @@ from connection import contract
 from utils.streamlit_utils import displayPDF, hide_icons, hide_sidebar, remove_whitespaces
 from streamlit_extras.switch_page_button import switch_page
 
+# Check login state
+if 'verifier_logged_in' not in st.session_state or not st.session_state['verifier_logged_in']:
+    st.title("Verifier Access")
+    st.write("")
+    st.write("")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📝 Register as New User", key="register_btn", use_container_width=True):
+            switch_page("register")
+    with col2:
+        if st.button("🔐 Already Have an Account? Login", key="login_btn", use_container_width=True):
+            switch_page("login")
+    st.stop()
+
+# --- Verifier Dashboard (only shown if logged in) ---
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 hide_icons()
 hide_sidebar()
@@ -26,12 +41,17 @@ if selected == options[0]:
             file.write(bytes_data)
         try:
             (uid, candidate_name, course_name, org_name) = extract_certificate("certificate.pdf")
+            st.write(f"Extracted UID: {uid}")
+            st.write(f"Extracted Candidate Name: {candidate_name}")
+            st.write(f"Extracted Course Name: {course_name}")
+            st.write(f"Extracted Organization Name: {org_name}")
             displayPDF("certificate.pdf")
             os.remove("certificate.pdf")
 
             # Calculating hash
             data_to_hash = f"{uid}{candidate_name}{course_name}{org_name}".encode('utf-8')
             certificate_id = hashlib.sha256(data_to_hash).hexdigest()
+            st.write(f"Generated Certificate Hash: {certificate_id}")
 
             # Smart Contract Call
             result = contract.functions.isVerified(certificate_id).call()
@@ -59,7 +79,7 @@ elif selected == options[1]:
         except Exception as e:
             st.error("Invalid Certificate ID!")
 
-# Add navigation
+# Add back button
 st.write("")
 st.write("")
 if st.button("⬅️ Back to Home", key="back_btn", use_container_width=True):

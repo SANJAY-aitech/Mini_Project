@@ -61,6 +61,7 @@ if submit:
     else:
         result = login(email, password)
         if result == "success":
+            st.session_state['verifier_logged_in'] = True
             st.success("✅ Login successful! Redirecting...")
             switch_page("verifier")
         else:

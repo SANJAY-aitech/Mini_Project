@@ -47,6 +47,7 @@ if submit:
     if email and password:
         result = register(email, password)
         if result == "success":
+            st.session_state['verifier_logged_in'] = True
             st.success("✅ Registration successful! Welcome to the system.")
             if st.session_state.profile == "Institute":
                 switch_page("institute")

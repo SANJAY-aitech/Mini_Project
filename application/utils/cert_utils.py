@@ -20,14 +20,7 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
     
     elements = []
     
-    # Add decorative border
-    border_drawing = Drawing(7*inch, 10*inch)
-    border_drawing.add(Rect(0.1*inch, 0.1*inch, 6.8*inch, 9.8*inch, 
-                           strokeColor=colors.gold, strokeWidth=3))
-    border_drawing.add(Rect(0.2*inch, 0.2*inch, 6.6*inch, 9.6*inch, 
-                           strokeColor=colors.darkblue, strokeWidth=1))
-    elements.append(border_drawing)
-    elements.append(Spacer(1, 0.5*inch))
+    # Only add certificate content, no extra border drawing to avoid blank page
     
     # Add institute logo and name
     if institute_logo_path and os.path.exists(institute_logo_path):
@@ -43,9 +36,9 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
         "InstituteStyle",
         parent=getSampleStyleSheet()["Title"],
         fontName="Helvetica-Bold",
-        fontSize=18,
+        fontSize=16,
         textColor=colors.darkblue,
-        spaceAfter=0.3*inch,
+        spaceAfter=0.15*inch,
         alignment=1  # Center alignment
     )
     institute = Paragraph(f"<b>{org_name}</b>", institute_style)
@@ -56,9 +49,9 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
         "TitleStyle",
         parent=getSampleStyleSheet()["Title"],
         fontName="Helvetica-Bold",
-        fontSize=28,
+        fontSize=22,
         textColor=colors.darkred,
-        spaceAfter=0.4*inch,
+        spaceAfter=0.2*inch,
         alignment=1
     )
     title = Paragraph("CERTIFICATE OF COMPLETION", title_style)
@@ -68,10 +61,10 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
     body_style = ParagraphStyle(
         "BodyStyle",
         parent=getSampleStyleSheet()["BodyText"],
-        fontSize=16,
-        leading=24,
+        fontSize=13,
+        leading=18,
         alignment=1,
-        spaceAfter=0.2*inch
+        spaceAfter=0.1*inch
     )
     
     body_text = f"""
@@ -84,20 +77,20 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
     """
     
     body = Paragraph(body_text, body_style)
-    elements.extend([body, Spacer(1, 0.5*inch)])
+    elements.extend([body, Spacer(1, 0.15*inch)])
     
     # Add date and signature section
     date_style = ParagraphStyle(
         "DateStyle",
         parent=getSampleStyleSheet()["BodyText"],
-        fontSize=12,
+        fontSize=10,
         alignment=1
     )
     
     current_date = datetime.now().strftime("%B %d, %Y")
     date_text = f"Date of Issue: {current_date}"
     date_para = Paragraph(date_text, date_style)
-    elements.extend([date_para, Spacer(1, 0.8*inch)])
+    elements.extend([date_para, Spacer(1, 0.08*inch)])
     
     # Signature section
     signature_table_data = [
@@ -116,13 +109,13 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
     ]))
     
     elements.append(signature_table)
-    elements.append(Spacer(1, 0.3*inch))
+    elements.append(Spacer(1, 0.08*inch))
     
     # Add certificate ID at the bottom
     cert_id_style = ParagraphStyle(
         "CertIdStyle",
         parent=getSampleStyleSheet()["BodyText"],
-        fontSize=10,
+        fontSize=8,
         textColor=colors.grey,
         alignment=1
     )
@@ -231,12 +224,20 @@ def extract_certificate(pdf_path):
             course_name = "Unknown Course"
             
             # Look for patterns in the text
-            for line in lines:
+            for idx, line in enumerate(lines):
                 if "Student ID:" in line:
                     uid = line.replace("Student ID:", "").strip()
                 elif "has successfully completed" in line:
-                    # Try to extract course name from context
-                    course_name = line.split("completed the course")[-1].strip().replace('"', '')
+                    # If course name is on the next line, extract it
+                    if idx + 1 < len(lines):
+                        next_line = lines[idx + 1].strip().replace('"', '')
+                        if next_line:
+                            course_name = next_line
+                        else:
+                            # fallback to old logic if next line is empty
+                            course_name = line.split("completed the course")[-1].strip().replace('"', '')
+                    else:
+                        course_name = line.split("completed the course")[-1].strip().replace('"', '')
             
             # Try to find candidate name (usually appears after "This is to certify that")
             for i, line in enumerate(lines):

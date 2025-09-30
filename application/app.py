@@ -1,7 +1,7 @@
 import streamlit as st
+from streamlit_extras.switch_page_button import switch_page
 from PIL import Image
 from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
-from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 hide_icons()
@@ -16,11 +16,7 @@ st.markdown("### Blockchain-Powered Digital Certificate Management")
 st.write("")
 st.write("")
 
-# About section
-st.markdown("""
-**About This System:** This platform uses blockchain technology to generate, store, and verify digital certificates securely. 
-Certificates are stored on IPFS (InterPlanetary File System) and verified through Ethereum smart contracts.
-""")
+
 
 st.write("")
 st.write("")
@@ -66,13 +62,12 @@ with col2:
 # Handle button clicks
 if clicked_institute:
     st.session_state.profile = "Institute"
-    switch_page('login')
+    switch_page("institute")
 elif clicked_verifier:
     st.session_state.profile = "Verifier"
-    switch_page('login')
+    switch_page("verifier")
 
 # Add footer
 st.write("")
 st.write("")
 st.markdown("---")
-st.markdown("*Powered by Blockchain Technology • IPFS Storage • Ethereum Smart Contracts*")
