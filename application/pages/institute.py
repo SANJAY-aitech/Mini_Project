@@ -154,12 +154,7 @@ with tab1:
                         progress_bar.progress(70)
                         if auto_generate_id:
                             data_to_hash = f"{uid}{candidate_name}{course_name}{org_name}".encode('utf-8')
-                            st.write(f"[DEBUG] Registration UID: {uid}")
-                            st.write(f"[DEBUG] Registration Candidate Name: {candidate_name}")
-                            st.write(f"[DEBUG] Registration Course Name: {course_name}")
-                            st.write(f"[DEBUG] Registration Organization Name: {org_name}")
                             certificate_id = hashlib.sha256(data_to_hash).hexdigest()
-                            st.write(f"[DEBUG] Registration Certificate Hash: {certificate_id}")
                         else:
                             certificate_id = st.text_input("Enter custom Certificate ID")
                         status_text.text("⛓️ Uploading to blockchain...")
@@ -448,11 +443,4 @@ with tab3:
         
                 except Exception as e:
                     st.error("❌ Invalid Certificate ID or certificate not found!")
-
-# Add back button at the end of the dashboard
-st.write("")
-st.write("")
-from streamlit_extras.switch_page_button import switch_page
-if st.button("\u2B05\uFE0F Back to Home", key="back_btn_institute", use_container_width=True):
-    switch_page("app")
 

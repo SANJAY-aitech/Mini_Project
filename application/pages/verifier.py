@@ -40,21 +40,47 @@ if selected == options[0]:
         with open("certificate.pdf", "wb") as file:
             file.write(bytes_data)
         try:
-            (uid, candidate_name, course_name, org_name) = extract_certificate("certificate.pdf")
-            st.write(f"Extracted UID: {uid}")
-            st.write(f"Extracted Candidate Name: {candidate_name}")
-            st.write(f"Extracted Course Name: {course_name}")
-            st.write(f"Extracted Organization Name: {org_name}")
+            (uid, candidate_name, course_name, org_name, embedded_hash) = extract_certificate("certificate.pdf")
+            st.write(f"[DEBUG] Verification Extracted UID: {uid}")
+            st.write(f"[DEBUG] Verification Extracted Name: {candidate_name}")
+            st.write(f"[DEBUG] Verification Extracted Course: {course_name}")
+            st.write(f"[DEBUG] Verification Extracted Org: {org_name}")
+            st.write(f"[DEBUG] Embedded hash found in PDF: {embedded_hash}")
             displayPDF("certificate.pdf")
             os.remove("certificate.pdf")
 
-            # Calculating hash
-            data_to_hash = f"{uid}{candidate_name}{course_name}{org_name}".encode('utf-8')
-            certificate_id = hashlib.sha256(data_to_hash).hexdigest()
-            st.write(f"Generated Certificate Hash: {certificate_id}")
+            
+            # Prefer embedded certificate hash from PDF when available
+            if embedded_hash:
+                certificate_id = embedded_hash
+                st.write(f"[DEBUG] Using embedded certificate hash from PDF: {certificate_id}")
+            else:
+                # Fallback: recompute from extracted fields
+                data_to_hash = f"{uid}{candidate_name}{course_name}{org_name}".encode('utf-8')
+                certificate_id = hashlib.sha256(data_to_hash).hexdigest()
+                st.write(f"[DEBUG] Recomputed Verification Generated Hash: {certificate_id}")
 
-            # Smart Contract Call
+            # Debug blockchain verification
+            st.write(f"[DEBUG] Checking certificate on blockchain with ID: {certificate_id}")
             result = contract.functions.isVerified(certificate_id).call()
+            st.write(f"[DEBUG] Blockchain verification result: {result}")
+            
+            if not result:
+                st.error("Certificate verification failed. Possible reasons:")
+                st.write("1. Certificate ID not found on blockchain")
+                st.write("2. Extracted data might differ from registration data")
+                st.write("3. PDF format might have changed")
+                
+                # Try to get registered certificate data for comparison
+                try:
+                    registered_data = contract.functions.getCertificate(certificate_id).call()
+                    st.write("\nRegistered certificate data:")
+                    st.write(f"UID: {registered_data[0]}")
+                    st.write(f"Name: {registered_data[1]}")
+                    st.write(f"Course: {registered_data[2]}")
+                    st.write(f"Organization: {registered_data[3]}")
+                except Exception as e:
+                    st.write("\nNo registered certificate found with this ID")
             if result:
                 st.success("Certificated validated successfully!")
             else:
@@ -68,18 +94,33 @@ elif selected == options[1]:
     certificate_id = form.text_input("Enter the Certificate ID")
     submit = form.form_submit_button("Validate")
     if submit:
+        if not certificate_id:
+            st.error("Please enter a Certificate ID")
+            st.stop()
+            
         try:
-            view_certificate(certificate_id)
-            # Smart Contract Call
+            # First verify on blockchain
             result = contract.functions.isVerified(certificate_id).call()
-            if result:
-                st.success("Certificated validated successfully!")
+            if not result:
+                st.error("❌ Certificate ID not found on blockchain")
+                st.stop()
+                
+            # If verified on blockchain, try to fetch and display
+            st.write(f"[DEBUG] Attempting to verify certificate: {certificate_id}")
+            if view_certificate(certificate_id):
+                st.success("✅ Certificate verified successfully!")
             else:
-                st.error("Invalid Certificate ID!")
+                st.error("❌ Certificate found on blockchain but could not be retrieved")
+                st.info("This could be due to:")
+                st.write("1. IPFS gateway connection issues")
+                st.write("2. Certificate file may no longer be available on IPFS")
+                st.write("3. Pinata API rate limiting")
+                
         except Exception as e:
-            st.error("Invalid Certificate ID!")
+            st.error("❌ Error during verification")
+            st.write(f"[DEBUG] Error details: {str(e)}")
 
-# Add back button
+
 st.write("")
 st.write("")
 if st.button("⬅️ Back to Home", key="back_btn", use_container_width=True):

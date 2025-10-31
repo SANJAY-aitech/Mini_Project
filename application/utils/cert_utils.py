@@ -8,21 +8,20 @@ from reportlab.graphics import renderPDF
 import pdfplumber
 import os
 from datetime import datetime
+import re
 
 def generate_certificate(output_path, uid, candidate_name, course_name, org_name, institute_logo_path=None, format_type="PDF"):
     """
     Generate a professional certificate with enhanced design
     """
-    # Create a PDF document with A4 size for better appearance
+
     doc = SimpleDocTemplate(output_path, pagesize=A4, 
                           topMargin=1*inch, bottomMargin=1*inch,
                           leftMargin=1*inch, rightMargin=1*inch)
     
     elements = []
     
-    # Only add certificate content, no extra border drawing to avoid blank page
     
-    # Add institute logo and name
     if institute_logo_path and os.path.exists(institute_logo_path):
         try:
             logo = Image(institute_logo_path, width=120, height=120)
@@ -210,46 +209,83 @@ def extract_certificate(pdf_path):
                 text += page.extract_text()
             
             if not text:
-                return None, None, None, None
+                return None, None, None, None, None
             
             lines = [line.strip() for line in text.splitlines() if line.strip()]
             
             if len(lines) < 4:
-                return None, None, None, None
-            
-            # Try to extract data based on the certificate format
+                return None, None, None, None, None
+                
+            # Initialize defaults
             org_name = lines[0] if lines else "Unknown Organization"
-            candidate_name = "Unknown Student"
-            uid = "Unknown UID"
-            course_name = "Unknown Course"
-            
-            # Look for patterns in the text
+            candidate_name = None
+            uid = None
+            course_name = None
+
+            # helper to get next non-empty line
+            def next_nonempty(idx):
+                for j in range(idx + 1, len(lines)):
+                    if lines[j].strip():
+                        return lines[j].strip()
+                return ""
+
+            # Search lines for UID, candidate name, and course
             for idx, line in enumerate(lines):
-                if "Student ID:" in line:
-                    uid = line.replace("Student ID:", "").strip()
-                elif "has successfully completed" in line:
-                    # If course name is on the next line, extract it
-                    if idx + 1 < len(lines):
-                        next_line = lines[idx + 1].strip().replace('"', '')
-                        if next_line:
-                            course_name = next_line
-                        else:
-                            # fallback to old logic if next line is empty
-                            course_name = line.split("completed the course")[-1].strip().replace('"', '')
+                l = line
+                if "Student ID:" in l:
+                    uid = l.split("Student ID:")[-1].strip()
+
+                if "This is to certify that" in l and idx + 1 < len(lines):
+                    candidate_name = next_nonempty(idx)
+
+                if "has successfully completed" in l or "completed the course" in l:
+                    # Try to capture quoted course on same line
+                    m = re.search(r'"([^"]+)"', l)
+                    if m:
+                        course_name = m.group(1).strip()
                     else:
-                        course_name = line.split("completed the course")[-1].strip().replace('"', '')
-            
-            # Try to find candidate name (usually appears after "This is to certify that")
-            for i, line in enumerate(lines):
-                if "This is to certify that" in line and i + 1 < len(lines):
-                    candidate_name = lines[i + 1].strip()
-                    break
-            
-            return uid, candidate_name, course_name, org_name
+                        # fallback to next non-empty line
+                        nxt = next_nonempty(idx)
+                        if nxt:
+                            course_name = nxt.strip().strip('"')
+
+            # Final fallbacks
+            if not candidate_name:
+                candidate_name = "Unknown Student"
+            if not uid:
+                uid = "Unknown UID"
+            if not course_name:
+                # try to find any quoted substring in full text
+                mq = re.search(r'"([^"]{2,200})"', text)
+                if mq:
+                    course_name = mq.group(1).strip()
+                else:
+                    course_name = ""
+
+            # Try to detect printed certificate hash (SHA256) in the text
+            certificate_hash = None
+            # Search for a labeled hash first
+            for line in lines:
+                if "Certificate Hash ID:" in line or "Certificate ID:" in line:
+                    parts = line.split(":", 1)
+                    if len(parts) > 1:
+                        possible = parts[1].strip()
+                        m = re.search(r"[a-fA-F0-9]{64}", possible)
+                        if m:
+                            certificate_hash = m.group(0)
+                            break
+            # If not found, search any 64-hex substring in the document
+            if not certificate_hash:
+                joined = " ".join(lines)
+                m = re.search(r"\b[a-fA-F0-9]{64}\b", joined)
+                if m:
+                    certificate_hash = m.group(0)
+
+            return uid, candidate_name, course_name, org_name, certificate_hash
             
     except Exception as e:
         print(f"Error extracting certificate data: {str(e)}")
-        return None, None, None, None
+        return None, None, None, None, None
 
 
 def get_certificate_template_info():

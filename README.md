@@ -21,7 +21,6 @@ A blockchain-based system for generating and verifying digital certificates usin
    ```
 
 2. **Create a `.env` file** in the project root with your API keys:
-   ```
    PINATA_API_KEY = "your_pinata_api_key"
    PINATA_API_SECRET = "your_pinata_secret_key"
    FIREBASE_API_KEY = "your_firebase_api_key"

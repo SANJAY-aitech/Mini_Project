@@ -22,18 +22,18 @@ st.markdown("### 📝 Registration")
 # Create form with custom styling
 form = st.form("register")
 
-# Add form fields
+
 email = form.text_input("Email Address", placeholder="Enter your email address", key="reg_email_input")
 password = form.text_input("Password", type="password", placeholder="Create a strong password", key="reg_password_input")
 
-# Add some spacing
+
 st.write("")
 st.write("")
 
-# Submit button
+
 submit = form.form_submit_button("🚀 Create Account", use_container_width=True)
 
-# Login link
+
 st.write("")
 st.markdown("Already have an account?")
 
@@ -42,7 +42,7 @@ clicked_login = st.button("🔐 Sign In Instead", key="login_btn", use_container
 if clicked_login:
     switch_page("login")
     
-# Handle form submission
+
 if submit:
     if email and password:
         result = register(email, password)
@@ -58,7 +58,7 @@ if submit:
     else:
         st.error("❌ Please fill in all fields!")
 
-# Add back button
+
 st.write("")
 st.write("")
 st.markdown("Changed your mind?")
